@@ -1,4 +1,4 @@
-import { Pool, PoolClient, QueryResult, QueryResultRow } from 'pg';
+import { Pool, PoolClient, QueryResult, QueryResultRow, QueryConfigValues } from 'pg';
 import { env } from './env';
 
 const pool = new Pool({
@@ -18,7 +18,7 @@ pool.on('error', (err) => {
 });
 
 export const db = {
-  query: <T extends QueryResultRow = any>(text: string, params?: any[]): Promise<QueryResult<T>> => {
+  query: <T extends QueryResultRow = QueryResultRow>(text: string, params?: QueryConfigValues<unknown[]>): Promise<QueryResult<T>> => {
     return pool.query<T>(text, params);
   },
 

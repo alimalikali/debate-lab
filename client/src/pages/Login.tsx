@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { getApiErrorMessage, getApiErrorPayload } from "@/lib/errors";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Navbar } from "@/components/layout/navbar";
@@ -49,8 +50,8 @@ const Login = () => {
         description: "You have successfully logged in.",
       });
       navigate("/");
-    } catch (error: any) {
-      const errorMessage = error.response?.data?.error?.message || "Invalid email or password";
+    } catch (error: unknown) {
+      const errorMessage = getApiErrorMessage(error, "Invalid email or password");
       setLoginError(errorMessage);
       toast({
         title: "Login failed",
@@ -91,8 +92,8 @@ const Login = () => {
         description: "Welcome to AI Debate. Let's start practicing!",
       });
       navigate("/");
-    } catch (error: any) {
-      const errorData = error.response?.data?.error;
+    } catch (error: unknown) {
+      const errorData = getApiErrorPayload(error)?.error;
       const errorMessage = errorData?.message || "Could not create account";
 
       // Parse field-specific errors from validation

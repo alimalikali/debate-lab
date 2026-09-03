@@ -12,6 +12,7 @@ export interface AIProviderConfig {
 }
 
 export interface AIResponse {
+  messageId?: string;
   content: string;
   tokensUsed: number;
   responseTimeMs: number;

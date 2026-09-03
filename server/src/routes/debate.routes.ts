@@ -1,3 +1,4 @@
+import { getErrorMessage, getHttpStatus } from '../utils/errors';
 import { Router, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { debateService } from '../services/debate.service';
@@ -144,12 +145,12 @@ router.post(
           res.end();
         },
         onError: (error) => {
-          res.write(`event: error\ndata: ${JSON.stringify({ error: error.message })}\n\n`);
+          res.write(`event: error\ndata: ${JSON.stringify({ error: getErrorMessage(error) })}\n\n`);
           res.end();
         },
       });
-    } catch (error: any) {
-      res.write(`event: error\ndata: ${JSON.stringify({ error: error.message })}\n\n`);
+    } catch (error: unknown) {
+      res.write(`event: error\ndata: ${JSON.stringify({ error: getErrorMessage(error) })}\n\n`);
       res.end();
     }
   }

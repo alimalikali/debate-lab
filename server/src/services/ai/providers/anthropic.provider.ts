@@ -1,3 +1,4 @@
+import { getErrorMessage, getHttpStatus } from '../../../utils/errors';
 import axios from 'axios';
 import { AIProvider, AIMessage, AIProviderConfig, AIResponse, StreamingCallback } from '../types';
 
@@ -41,8 +42,8 @@ export class AnthropicProvider implements AIProvider {
       );
 
       const content = response.data.content
-        .filter((c: any) => c.type === 'text')
-        .map((c: any) => c.text)
+        .filter((c: { type: string; text?: string }) => c.type === 'text')
+        .map((c: { type: string; text?: string }) => c.text ?? "")
         .join('');
 
       return {
@@ -52,11 +53,11 @@ export class AnthropicProvider implements AIProvider {
         model: config.model,
         provider: this.name,
       };
-    } catch (error: any) {
-      if (error.response?.status === 401) {
+    } catch (error: unknown) {
+      if (getHttpStatus(error) === 401) {
         throw new Error('Invalid Anthropic API key');
       }
-      throw new Error(`Anthropic error: ${error.response?.data?.error?.message || error.message}`);
+      throw new Error(`Anthropic error: ${getErrorMessage(error)}`);
     }
   }
 
@@ -133,8 +134,8 @@ export class AnthropicProvider implements AIProvider {
       });
 
       response.data.on('error', callbacks.onError);
-    } catch (error: any) {
-      callbacks.onError(new Error(`Anthropic error: ${error.message}`));
+    } catch (error: unknown) {
+      callbacks.onError(new Error(`Anthropic error: ${getErrorMessage(error)}`));
     }
   }
 
@@ -172,8 +173,8 @@ export class AnthropicProvider implements AIProvider {
         }
       );
       return true;
-    } catch (error: any) {
-      return error.response?.status !== 401;
+    } catch (error: unknown) {
+      return getHttpStatus(error) !== 401;
     }
   }
 }

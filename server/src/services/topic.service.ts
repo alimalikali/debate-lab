@@ -1,3 +1,4 @@
+import { QueryConfigValues } from 'pg';
 import { db } from '../config/database';
 import { NotFoundError } from '../middleware/error.middleware';
 import { generateSlug, paginationHelper, createPaginatedResponse, PaginatedResponse } from '../utils/helpers';
@@ -71,7 +72,7 @@ export class TopicService {
     const { offset } = paginationHelper(page, limit);
 
     let whereClause = 'WHERE dt.is_active = true';
-    const params: any[] = [];
+    const params: QueryConfigValues<unknown[]> = [];
     let paramIndex = 1;
 
     if (filters.categorySlug) {

@@ -1,0 +1,14 @@
+{
+  "name": "debate-lab",
+  "private": true,
+  "workspaces": ["client", "server"],
+  "scripts": {
+    "build": "npm run build --workspace server && npm run build --workspace client",
+    "check": "npm run build && npm run lint --workspace client",
+    "dev:client": "npm run dev --workspace client",
+    "dev:server": "npm run dev --workspace server",
+    "migrate": "npm run migrate --workspace server",
+    "seed": "npm run seed --workspace server"
+  },
+  "engines": { "node": ">=20.0.0" }
+}

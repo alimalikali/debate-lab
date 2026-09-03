@@ -1,3 +1,4 @@
+import { QueryConfigValues } from 'pg';
 import { db } from '../config/database';
 import { NotFoundError } from '../middleware/error.middleware';
 import { encryptApiKey, decryptApiKey, maskApiKey } from '../utils/encryption';
@@ -63,7 +64,7 @@ export class UserService {
 
   async updateProfile(userId: string, input: UpdateProfileInput) {
     const updates: string[] = [];
-    const values: any[] = [];
+    const values: QueryConfigValues<unknown[]> = [];
     let paramIndex = 1;
 
     if (input.displayName !== undefined) {
@@ -125,7 +126,7 @@ export class UserService {
 
   async updateSettings(userId: string, settings: Partial<UserSettings>): Promise<UserSettings> {
     const updates: string[] = [];
-    const values: any[] = [];
+    const values: QueryConfigValues<unknown[]> = [];
     let paramIndex = 1;
 
     const fieldMap: Record<string, string> = {
