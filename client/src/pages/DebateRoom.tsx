@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { getApiErrorMessage } from "@/lib/errors";
 import { useParams, useNavigate } from "react-router-dom";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
@@ -129,7 +130,7 @@ const DebateRoom = () => {
   const { sendMessage, isStreaming, streamingContent } = useDebateStream({
     debateId: id!,
     onMessage: (message) => {
-      setMessages((prev) => [...prev, message as any]);
+      setMessages((prev) => [...prev, { id: message.id, content: message.content, role: "ai", timestamp: new Date() }]);
     },
     onFallacyAnalysis: handleFallacyAnalysis,
     onError: (error) => {
@@ -154,10 +155,10 @@ const DebateRoom = () => {
 
         setDebate(debateResponse.data);
         setMessages(
-          messagesResponse.data.map((m: any) => ({
+          messagesResponse.data.map((m) => ({
             id: m.id,
             content: m.content,
-            role: m.role,
+            role: m.role === "human" ? "human" : "ai",
             timestamp: new Date(m.createdAt),
           }))
         );
@@ -175,10 +176,10 @@ const DebateRoom = () => {
         } catch {
           // Stats may not exist yet
         }
-      } catch (error: any) {
+      } catch (error: unknown) {
         toast({
           title: "Failed to load debate",
-          description: error.response?.data?.error?.message || "Please try again",
+          description: getApiErrorMessage(error, "Please try again"),
           variant: "destructive",
         });
         navigate("/debates");
@@ -270,10 +271,10 @@ const DebateRoom = () => {
         title: "Debate ended",
         description: "Your performance summary is ready",
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Failed to end debate",
-        description: error.response?.data?.error?.message || "Please try again",
+        description: getApiErrorMessage(error, "Please try again"),
         variant: "destructive",
       });
     } finally {

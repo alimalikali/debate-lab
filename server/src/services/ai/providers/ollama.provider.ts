@@ -1,3 +1,4 @@
+import { getErrorMessage, getHttpStatus } from '../../../utils/errors';
 import axios from 'axios';
 import { AIProvider, AIMessage, AIProviderConfig, AIResponse, StreamingCallback } from '../types';
 import { env } from '../../../config/env';
@@ -43,11 +44,11 @@ export class OllamaProvider implements AIProvider {
         model: config.model || env.ollama.defaultModel,
         provider: this.name,
       };
-    } catch (error: any) {
-      if (error.code === 'ECONNREFUSED') {
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error) && error.code === 'ECONNREFUSED') {
         throw new Error('Ollama server is not running. Please start Ollama first.');
       }
-      throw new Error(`Ollama error: ${error.message}`);
+      throw new Error(`Ollama error: ${getErrorMessage(error)}`);
     }
   }
 
@@ -118,11 +119,11 @@ export class OllamaProvider implements AIProvider {
           callbacks.onError(new Error('No response received from Ollama'));
         }
       });
-    } catch (error: any) {
-      if (error.code === 'ECONNREFUSED') {
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error) && error.code === 'ECONNREFUSED') {
         callbacks.onError(new Error('Ollama server is not running. Please start Ollama first.'));
       } else {
-        callbacks.onError(new Error(`Ollama error: ${error.message}`));
+        callbacks.onError(new Error(`Ollama error: ${getErrorMessage(error)}`));
       }
     }
   }
@@ -133,9 +134,9 @@ export class OllamaProvider implements AIProvider {
         timeout: 10000,
       });
 
-      return response.data.models?.map((m: any) => m.name) || [];
-    } catch (error: any) {
-      if (error.code === 'ECONNREFUSED') {
+      return response.data.models?.map((m: { name: string }) => m.name) || [];
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error) && error.code === 'ECONNREFUSED') {
         return [];
       }
       throw error;

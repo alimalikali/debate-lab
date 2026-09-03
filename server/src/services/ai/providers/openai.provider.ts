@@ -1,3 +1,4 @@
+import { getErrorMessage, getHttpStatus } from '../../../utils/errors';
 import axios from 'axios';
 import { AIProvider, AIMessage, AIProviderConfig, AIResponse, StreamingCallback } from '../types';
 
@@ -38,11 +39,11 @@ export class OpenAIProvider implements AIProvider {
         model: config.model,
         provider: this.name,
       };
-    } catch (error: any) {
-      if (error.response?.status === 401) {
+    } catch (error: unknown) {
+      if (getHttpStatus(error) === 401) {
         throw new Error('Invalid OpenAI API key');
       }
-      throw new Error(`OpenAI error: ${error.response?.data?.error?.message || error.message}`);
+      throw new Error(`OpenAI error: ${getErrorMessage(error)}`);
     }
   }
 
@@ -112,8 +113,8 @@ export class OpenAIProvider implements AIProvider {
       });
 
       response.data.on('error', callbacks.onError);
-    } catch (error: any) {
-      callbacks.onError(new Error(`OpenAI error: ${error.message}`));
+    } catch (error: unknown) {
+      callbacks.onError(new Error(`OpenAI error: ${getErrorMessage(error)}`));
     }
   }
 
@@ -132,8 +133,8 @@ export class OpenAIProvider implements AIProvider {
       });
 
       return response.data.data
-        .filter((m: any) => m.id.includes('gpt'))
-        .map((m: any) => m.id)
+        .filter((m: { id: string }) => m.id.includes('gpt'))
+        .map((m: { id: string }) => m.id)
         .sort();
     } catch {
       return ['gpt-3.5-turbo', 'gpt-4', 'gpt-4-turbo-preview'];

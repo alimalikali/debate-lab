@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { getApiErrorMessage } from "@/lib/errors";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Navbar } from "@/components/layout/navbar";
@@ -82,15 +83,7 @@ const Settings = () => {
   // Ollama status
   const [ollamaStatus, setOllamaStatus] = useState<{ connected: boolean; models: string[] } | null>(null);
 
-  useEffect(() => {
-    if (!isAuthenticated) {
-      navigate('/login');
-      return;
-    }
-    loadData();
-  }, [isAuthenticated, navigate]);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       const [keysRes, settingsRes, ollamaRes] = await Promise.all([
         userApi.getApiKeys(),
@@ -113,7 +106,15 @@ const Settings = () => {
       setLoadingKeys(false);
       setLoadingSettings(false);
     }
-  };
+  }, [toast, user?.displayName]);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      navigate('/login');
+      return;
+    }
+    void loadData();
+  }, [isAuthenticated, navigate, loadData]);
 
   const handleAddApiKey = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -137,10 +138,10 @@ const Settings = () => {
         title: "API Key Added",
         description: `Your ${PROVIDERS.find(p => p.value === newKeyProvider)?.label} key has been saved securely.`,
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Failed to add API key",
-        description: error.response?.data?.error?.message || "Could not save the API key",
+        description: getApiErrorMessage(error, "Could not save the API key"),
         variant: "destructive",
       });
     } finally {
@@ -156,10 +157,10 @@ const Settings = () => {
         title: "API Key Deleted",
         description: `Your ${PROVIDERS.find(p => p.value === provider)?.label || provider} key has been removed.`,
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Failed to delete API key",
-        description: error.response?.data?.error?.message || "Could not delete the API key",
+        description: getApiErrorMessage(error, "Could not delete the API key"),
         variant: "destructive",
       });
     }
@@ -176,10 +177,10 @@ const Settings = () => {
           : "Could not connect to the provider. Check your API key.",
         variant: res.data.connected ? "default" : "destructive",
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Test Failed",
-        description: error.response?.data?.error?.message || "Could not test the provider",
+        description: getApiErrorMessage(error, "Could not test the provider"),
         variant: "destructive",
       });
     } finally {
@@ -197,10 +198,10 @@ const Settings = () => {
         title: "Settings Saved",
         description: "Your preferences have been updated.",
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Failed to save settings",
-        description: error.response?.data?.error?.message || "Could not save settings",
+        description: getApiErrorMessage(error, "Could not save settings"),
         variant: "destructive",
       });
     } finally {
@@ -216,10 +217,10 @@ const Settings = () => {
         title: "Profile Updated",
         description: "Your profile has been saved.",
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Failed to update profile",
-        description: error.response?.data?.error?.message || "Could not save profile",
+        description: getApiErrorMessage(error, "Could not save profile"),
         variant: "destructive",
       });
     } finally {

@@ -88,7 +88,7 @@ export function useDebateStream({ debateId, onMessage, onFallacyAnalysis, onErro
                   fullContent += data.token;
                   setStreamingContent(fullContent);
                   break;
-                case 'complete':
+                case 'complete': {
                   // The AI message is complete - add it to messages
                   const aiMessage: Message = {
                     id: data.messageId || data.id || crypto.randomUUID(),
@@ -100,6 +100,7 @@ export function useDebateStream({ debateId, onMessage, onFallacyAnalysis, onErro
                   onMessage?.(aiMessage);
                   setStreamingContent('');
                   break;
+                }
                 case 'fallacy_analysis':
                   onFallacyAnalysis?.(data);
                   break;

@@ -1,3 +1,4 @@
+import { getErrorMessage, getHttpStatus } from '../../utils/errors';
 import { aiServiceFactory } from './ai-service.factory';
 import {
   AIMessage,
@@ -176,10 +177,10 @@ Respond ONLY with the JSON, no other text.`;
         return this.getDefaultAnalysis();
       }
 
-      const analysis = JSON.parse(jsonMatch[0]);
+      const analysis = JSON.parse(jsonMatch[0]) as { fallacies?: Array<{ type: FallacyType; severity?: 'minor' | 'moderate' | 'major'; quote?: string; suggestion?: string }>; hasFallacies?: boolean; argumentStrength?: number; logicalSoundness?: number; overallFeedback?: string };
 
       // Enrich fallacies with descriptions from our reference
-      const enrichedFallacies: DetectedFallacy[] = (analysis.fallacies || []).map((f: any) => {
+      const enrichedFallacies: DetectedFallacy[] = (analysis.fallacies || []).map((f) => {
         const fallacyInfo = FALLACY_INFO[f.type as FallacyType] || {
           name: f.type,
           description: 'A logical error in reasoning.',
@@ -202,8 +203,8 @@ Respond ONLY with the JSON, no other text.`;
         logicalSoundness: Math.min(10, Math.max(1, analysis.logicalSoundness || 5)),
         overallFeedback: analysis.overallFeedback || 'Keep developing your argument!',
       };
-    } catch (error: any) {
-      console.error('[FALLACY] Analysis error:', error.message);
+    } catch (error: unknown) {
+      console.error('[FALLACY] Analysis error:', getErrorMessage(error));
       return this.getDefaultAnalysis();
     }
   }

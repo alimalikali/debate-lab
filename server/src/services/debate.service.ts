@@ -1,3 +1,4 @@
+import { getErrorMessage, getHttpStatus } from '../utils/errors';
 import { db } from '../config/database';
 import { NotFoundError, AuthorizationError } from '../middleware/error.middleware';
 import { topicService } from './topic.service';
@@ -52,6 +53,10 @@ interface Message {
   responseTimeMs: number | null;
   createdAt: Date;
 }
+
+interface DebateSummaryData { overallPerformance: string; argumentStrength: number; logicalScore: number; persuasiveScore: number; userStrengths: string[]; areasForImprovement: string[]; keyArgumentsUser: string[]; keyArgumentsAI: string[]; fallaciesDetected: Array<{ type: string; description: string }>; recommendation: string }
+interface DebateStatsData { argumentStrength: number; logicalScore: number; persuasiveScore: number; fallaciesDetected: number; totalUserMessages: number; totalAiMessages: number; totalTokensUsed: number; durationMinutes: number; outcome: string | null }
+interface DetailedFallacy { id: string; messageId: string; fallacyType: string; fallacyName: string; severity: string; description: string; quote: string; suggestion: string; argumentStrength: number; logicalSoundness: number; messageContent: string; createdAt: Date }
 
 export class DebateService {
   async createDebate(userId: string, input: CreateDebateInput): Promise<Debate> {
@@ -150,16 +155,16 @@ export class DebateService {
         responseTimeMs: aiResponse.responseTimeMs,
       });
       console.log('[DEBUG] AI message saved');
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Log the error for debugging
-      console.error('AI initial response failed:', error.message);
+      console.error('AI initial response failed:', getErrorMessage(error));
 
       // Delete the debate since AI failed
       await db.query('DELETE FROM debate_stats WHERE debate_id = $1', [debateId]);
       await db.query('DELETE FROM debates WHERE id = $1', [debateId]);
 
       // Re-throw with a helpful message
-      throw new Error(`Failed to start debate: ${error.message}`);
+      throw new Error(`Failed to start debate: ${getErrorMessage(error)}`);
     }
 
     console.log('[DEBUG] Fetching created debate...');
@@ -394,8 +399,8 @@ export class DebateService {
                     analysis.logicalSoundness,
                   ]
                 );
-              } catch (dbError: any) {
-                console.error('[FALLACY] Failed to save fallacy:', dbError.message);
+              } catch (dbError: unknown) {
+                console.error('[FALLACY] Failed to save fallacy:', getErrorMessage(dbError));
               }
             }
           }
@@ -403,7 +408,7 @@ export class DebateService {
           callbacks.onFallacyAnalysis!(analysis);
         })
         .catch((error) => {
-          console.error('[FALLACY] Detection error:', error.message);
+          console.error('[FALLACY] Detection error:', getErrorMessage(error));
         });
     }
 
@@ -417,13 +422,13 @@ export class DebateService {
           tokensUsed: response.tokensUsed,
           responseTimeMs: response.responseTimeMs,
         });
-        callbacks.onComplete({ ...response, messageId: aiMessage.id } as any);
+        callbacks.onComplete({ ...response, messageId: aiMessage.id });
       },
       onError: callbacks.onError,
     }, userApiKey);
   }
 
-  async endDebate(userId: string, debateId: string): Promise<{ summary: any; stats: any }> {
+  async endDebate(userId: string, debateId: string): Promise<{ summary: DebateSummaryData; stats: DebateStatsData | null; detailedFallacies: DetailedFallacy[] }> {
     const debate = await this.getDebate(userId, debateId);
 
     // Update debate status
@@ -456,10 +461,10 @@ export class DebateService {
     const userApiKey = await this.getUserApiKey(userId, debate.aiProvider);
 
     // Generate summary
-    let summaryData: any;
+    let summaryData: DebateSummaryData;
     try {
       const summaryJson = await debateAIService.generateDebateSummary(aiMessages, settings, userApiKey);
-      summaryData = JSON.parse(summaryJson);
+      summaryData = JSON.parse(summaryJson) as DebateSummaryData;
     } catch (error) {
       // Fallback summary
       summaryData = {
@@ -541,7 +546,7 @@ export class DebateService {
     return { summary: summaryData, stats, detailedFallacies };
   }
 
-  async getDebateFallacies(debateId: string): Promise<any[]> {
+  async getDebateFallacies(debateId: string): Promise<DetailedFallacy[]> {
     const result = await db.query(
       `SELECT df.*, m.content as message_content
        FROM debate_fallacies df
@@ -637,7 +642,7 @@ export class DebateService {
     );
   }
 
-  private mapDebateRow(row: any): Debate {
+  private mapDebateRow(row: import('pg').QueryResultRow): Debate {
     return {
       id: row.id,
       userId: row.user_id,

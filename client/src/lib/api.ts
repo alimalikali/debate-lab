@@ -1,6 +1,8 @@
 import axios, { AxiosError, AxiosInstance, InternalAxiosRequestConfig } from 'axios';
+import type { AiProvider, ApiKey, AuthResult, Category, Debate, DebateMessage, DebateStats, DebateSummary, Difficulty, DebateStyle, EndDebateResult, Topic, User, UserProfile, UserSettings } from '@/types/api';
+import { clientEnv } from '@/config/env';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api/v1';
+const API_BASE_URL = clientEnv.apiUrl;
 
 // Create axios instance
 export const api: AxiosInstance = axios.create({
@@ -87,12 +89,12 @@ export interface PaginatedResponse<T> {
 // Auth API
 export const authApi = {
   register: async (data: { email: string; username: string; password: string; displayName?: string }) => {
-    const response = await api.post<ApiResponse<{ user: any; tokens: { accessToken: string; refreshToken: string } }>>('/auth/register', data);
+    const response = await api.post<ApiResponse<AuthResult>>('/auth/register', data);
     return response.data;
   },
 
   login: async (data: { email: string; password: string }) => {
-    const response = await api.post<ApiResponse<{ user: any; tokens: { accessToken: string; refreshToken: string } }>>('/auth/login', data);
+    const response = await api.post<ApiResponse<AuthResult>>('/auth/login', data);
     return response.data;
   },
 
@@ -106,7 +108,7 @@ export const authApi = {
   },
 
   getMe: async () => {
-    const response = await api.get<ApiResponse<any>>('/auth/me');
+    const response = await api.get<ApiResponse<User>>('/auth/me');
     return response.data;
   },
 };
@@ -114,37 +116,37 @@ export const authApi = {
 // User API
 export const userApi = {
   getProfile: async () => {
-    const response = await api.get<ApiResponse<any>>('/users/profile');
+    const response = await api.get<ApiResponse<UserProfile>>('/users/profile');
     return response.data;
   },
 
   updateProfile: async (data: { displayName?: string; avatarUrl?: string }) => {
-    const response = await api.put<ApiResponse<any>>('/users/profile', data);
+    const response = await api.put<ApiResponse<UserProfile>>('/users/profile', data);
     return response.data;
   },
 
   getSettings: async () => {
-    const response = await api.get<ApiResponse<any>>('/users/settings');
+    const response = await api.get<ApiResponse<UserSettings>>('/users/settings');
     return response.data;
   },
 
-  updateSettings: async (data: any) => {
-    const response = await api.put<ApiResponse<any>>('/users/settings', data);
+  updateSettings: async (data: Partial<UserSettings>) => {
+    const response = await api.put<ApiResponse<UserSettings>>('/users/settings', data);
     return response.data;
   },
 
   getApiKeys: async () => {
-    const response = await api.get<ApiResponse<any[]>>('/users/api-keys');
+    const response = await api.get<ApiResponse<ApiKey[]>>('/users/api-keys');
     return response.data;
   },
 
   addApiKey: async (data: { provider: string; apiKey: string; keyName?: string; apiBaseUrl?: string }) => {
-    const response = await api.post<ApiResponse<any>>('/users/api-keys', data);
+    const response = await api.post<ApiResponse<ApiKey>>('/users/api-keys', data);
     return response.data;
   },
 
   deleteApiKey: async (id: string) => {
-    const response = await api.delete<ApiResponse<any>>(`/users/api-keys/${id}`);
+    const response = await api.delete<ApiResponse<never>>(`/users/api-keys/${id}`);
     return response.data;
   },
 };
@@ -152,27 +154,27 @@ export const userApi = {
 // Topics API
 export const topicsApi = {
   getCategories: async () => {
-    const response = await api.get<ApiResponse<any[]>>('/topics/categories');
+    const response = await api.get<ApiResponse<Category[]>>('/topics/categories');
     return response.data;
   },
 
   getTopics: async (params?: { category?: string; difficulty?: string; search?: string; page?: number; limit?: number }) => {
-    const response = await api.get<PaginatedResponse<any>>('/topics', { params });
+    const response = await api.get<PaginatedResponse<Topic>>('/topics', { params });
     return response.data;
   },
 
   getTopic: async (id: string) => {
-    const response = await api.get<ApiResponse<any>>(`/topics/${id}`);
+    const response = await api.get<ApiResponse<Topic>>(`/topics/${id}`);
     return response.data;
   },
 
   getTrending: async (limit?: number) => {
-    const response = await api.get<ApiResponse<any[]>>('/topics/trending', { params: { limit } });
+    const response = await api.get<ApiResponse<Topic[]>>('/topics/trending', { params: { limit } });
     return response.data;
   },
 
-  createTopic: async (data: { title: string; description: string; difficulty: string; categoryId?: string }) => {
-    const response = await api.post<ApiResponse<any>>('/topics', data);
+  createTopic: async (data: { title: string; description: string; difficulty: Difficulty; categoryId?: string }) => {
+    const response = await api.post<ApiResponse<Topic>>('/topics', data);
     return response.data;
   },
 };
@@ -184,32 +186,32 @@ export const debatesApi = {
     customTopicTitle?: string;
     customTopicDescription?: string;
     userPosition: string;
-    difficulty: string;
-    debateStyle: string;
+    difficulty: Difficulty;
+    debateStyle: DebateStyle;
     aiProvider?: string;
     aiModel?: string;
   }) => {
-    const response = await api.post<ApiResponse<any>>('/debates', data);
+    const response = await api.post<ApiResponse<Debate>>('/debates', data);
     return response.data;
   },
 
   getAll: async (page?: number, limit?: number) => {
-    const response = await api.get<PaginatedResponse<any>>('/debates', { params: { page, limit } });
+    const response = await api.get<PaginatedResponse<Debate>>('/debates', { params: { page, limit } });
     return response.data;
   },
 
   get: async (id: string) => {
-    const response = await api.get<ApiResponse<any>>(`/debates/${id}`);
+    const response = await api.get<ApiResponse<Debate>>(`/debates/${id}`);
     return response.data;
   },
 
   getMessages: async (id: string) => {
-    const response = await api.get<ApiResponse<any[]>>(`/debates/${id}/messages`);
+    const response = await api.get<ApiResponse<DebateMessage[]>>(`/debates/${id}/messages`);
     return response.data;
   },
 
   sendMessage: async (id: string, content: string) => {
-    const response = await api.post<ApiResponse<{ userMessage: any; aiMessage: any }>>(`/debates/${id}/messages`, { content });
+    const response = await api.post<ApiResponse<{ userMessage: DebateMessage; aiMessage: DebateMessage }>>(`/debates/${id}/messages`, { content });
     return response.data;
   },
 
@@ -226,22 +228,22 @@ export const debatesApi = {
   },
 
   end: async (id: string) => {
-    const response = await api.post<ApiResponse<{ summary: any; stats: any }>>(`/debates/${id}/end`);
+    const response = await api.post<ApiResponse<EndDebateResult>>(`/debates/${id}/end`);
     return response.data;
   },
 
   getStats: async (id: string) => {
-    const response = await api.get<ApiResponse<any>>(`/debates/${id}/stats`);
+    const response = await api.get<ApiResponse<DebateStats | null>>(`/debates/${id}/stats`);
     return response.data;
   },
 
   getSummary: async (id: string) => {
-    const response = await api.get<ApiResponse<any>>(`/debates/${id}/summary`);
+    const response = await api.get<ApiResponse<DebateSummary | null>>(`/debates/${id}/summary`);
     return response.data;
   },
 
   delete: async (id: string) => {
-    const response = await api.delete<ApiResponse<any>>(`/debates/${id}`);
+    const response = await api.delete<ApiResponse<never>>(`/debates/${id}`);
     return response.data;
   },
 };
@@ -249,7 +251,7 @@ export const debatesApi = {
 // AI API
 export const aiApi = {
   getProviders: async () => {
-    const response = await api.get<ApiResponse<any[]>>('/ai/providers');
+    const response = await api.get<ApiResponse<AiProvider[]>>('/ai/providers');
     return response.data;
   },
 

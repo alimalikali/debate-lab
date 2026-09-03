@@ -1,3 +1,4 @@
+import { getErrorMessage, getHttpStatus } from '../../../utils/errors';
 import axios from 'axios';
 import { AIProvider, AIMessage, AIProviderConfig, AIResponse, StreamingCallback } from '../types';
 
@@ -37,11 +38,11 @@ export class GroqProvider implements AIProvider {
         model: config.model,
         provider: this.name,
       };
-    } catch (error: any) {
-      if (error.response?.status === 401) {
+    } catch (error: unknown) {
+      if (getHttpStatus(error) === 401) {
         throw new Error('Invalid Groq API key');
       }
-      throw new Error(`Groq error: ${error.response?.data?.error?.message || error.message}`);
+      throw new Error(`Groq error: ${getErrorMessage(error)}`);
     }
   }
 
@@ -110,8 +111,8 @@ export class GroqProvider implements AIProvider {
       });
 
       response.data.on('error', callbacks.onError);
-    } catch (error: any) {
-      callbacks.onError(new Error(`Groq error: ${error.message}`));
+    } catch (error: unknown) {
+      callbacks.onError(new Error(`Groq error: ${getErrorMessage(error)}`));
     }
   }
 

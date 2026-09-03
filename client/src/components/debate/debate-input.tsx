@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Mic, Send } from "lucide-react";
+import { Send } from "lucide-react";
 
 interface DebateInputProps {
   onSendMessage: (content: string) => void;
@@ -14,7 +14,7 @@ export function DebateInput({ onSendMessage, isLoading }: DebateInputProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (message.trim() && !isLoading) {
       onSendMessage(message);
       setMessage("");
@@ -31,20 +31,12 @@ export function DebateInput({ onSendMessage, isLoading }: DebateInputProps) {
           className="min-h-24 resize-none"
         />
         <div className="flex flex-col gap-2">
-          <Button 
-            type="submit" 
+          <Button
+            type="submit"
             size="icon"
             disabled={!message.trim() || isLoading}
           >
             <Send className="h-4 w-4" />
-          </Button>
-          <Button
-            type="button"
-            size="icon"
-            variant="outline"
-            onClick={() => console.log("Voice input not implemented")}
-          >
-            <Mic className="h-4 w-4" />
           </Button>
         </div>
       </div>

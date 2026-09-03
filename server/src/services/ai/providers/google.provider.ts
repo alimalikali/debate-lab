@@ -1,3 +1,4 @@
+import { getErrorMessage, getHttpStatus } from '../../../utils/errors';
 import axios from 'axios';
 import { AIProvider, AIMessage, AIProviderConfig, AIResponse, StreamingCallback } from '../types';
 
@@ -59,14 +60,14 @@ export class GoogleProvider implements AIProvider {
         model: config.model,
         provider: this.name,
       };
-    } catch (error: any) {
-      if (error.response?.status === 401 || error.response?.status === 403) {
+    } catch (error: unknown) {
+      if (getHttpStatus(error) === 401 || getHttpStatus(error) === 403) {
         throw new Error('Invalid Google API key');
       }
-      if (error.response?.status === 404) {
+      if (getHttpStatus(error) === 404) {
         throw new Error(`Model "${config.model}" not found. Try gemini-2.0-flash, gemini-1.5-flash, or gemini-1.5-pro`);
       }
-      throw new Error(`Google AI error: ${error.response?.data?.error?.message || error.message}`);
+      throw new Error(`Google AI error: ${getErrorMessage(error)}`);
     }
   }
 
@@ -135,11 +136,11 @@ export class GoogleProvider implements AIProvider {
       });
 
       response.data.on('error', callbacks.onError);
-    } catch (error: any) {
-      if (error.response?.status === 404) {
+    } catch (error: unknown) {
+      if (getHttpStatus(error) === 404) {
         callbacks.onError(new Error(`Model "${config.model}" not found. Try gemini-2.0-flash, gemini-1.5-flash, or gemini-1.5-pro`));
       } else {
-        callbacks.onError(new Error(`Google AI error: ${error.response?.data?.error?.message || error.message}`));
+        callbacks.onError(new Error(`Google AI error: ${getErrorMessage(error)}`));
       }
     }
   }
@@ -154,11 +155,11 @@ export class GoogleProvider implements AIProvider {
 
         // Filter for generative models that support generateContent
         const models = response.data.models
-          ?.filter((m: any) =>
+          ?.filter((m: { name: string; supportedGenerationMethods?: string[] }) =>
             m.supportedGenerationMethods?.includes('generateContent') &&
             m.name?.includes('gemini')
           )
-          .map((m: any) => m.name.replace('models/', ''))
+          .map((m: { name: string; supportedGenerationMethods?: string[] }) => m.name.replace('models/', ''))
           .slice(0, 10) || [];
 
         if (models.length > 0) {

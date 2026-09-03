@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { getApiErrorMessage } from "@/lib/errors";
 import { useNavigate } from "react-router-dom";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
@@ -37,8 +38,8 @@ const NewDebate = () => {
 
   // Debate settings
   const [userPosition, setUserPosition] = useState("");
-  const [difficulty, setDifficulty] = useState("beginner");
-  const [debateStyle, setDebateStyle] = useState("balanced");
+  const [difficulty, setDifficulty] = useState<import("@/types/api").Difficulty>("beginner");
+  const [debateStyle, setDebateStyle] = useState<import("@/types/api").DebateStyle>("balanced");
 
   // AI Provider settings
   const [aiProvider, setAiProvider] = useState("ollama");
@@ -161,7 +162,7 @@ const NewDebate = () => {
         }
       }
 
-      const debateData: any = {
+      const debateData: Parameters<typeof debatesApi.create>[0] = {
         userPosition,
         difficulty,
         debateStyle,
@@ -182,10 +183,10 @@ const NewDebate = () => {
         description: "Good luck with your arguments",
       });
       navigate(`/debate/${response.data.id}`);
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Failed to start debate",
-        description: error.response?.data?.error?.message || "Please try again",
+        description: getApiErrorMessage(error, "Please try again"),
         variant: "destructive",
       });
     } finally {
@@ -304,7 +305,7 @@ const NewDebate = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Difficulty Level</Label>
-                  <Select value={difficulty} onValueChange={setDifficulty}>
+                  <Select value={difficulty} onValueChange={(value) => { if (value === "beginner" || value === "intermediate" || value === "expert") setDifficulty(value); }}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -318,7 +319,7 @@ const NewDebate = () => {
 
                 <div className="space-y-2">
                   <Label>Debate Style</Label>
-                  <Select value={debateStyle} onValueChange={setDebateStyle}>
+                  <Select value={debateStyle} onValueChange={(value) => { if (value === "aggressive" || value === "balanced" || value === "socratic") setDebateStyle(value); }}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
